@@ -65,6 +65,10 @@ public class HandleTask {
         System.out.println("source dex count " + sourceDexCount);
         System.out.println("copy dex ...");
         copyDex(sourceDexCount);
+        System.out.println("copy assets ...");
+        copyAssets();
+        System.out.println("copy libs ...");
+        copyLibs();
         FileUtils.deleteDirectory(new File(targetDirPath));
         System.out.println("delete apk sign ...");
         deleteSign();
@@ -130,6 +134,61 @@ public class HandleTask {
         for (File dex : dexs) {
             startPos++;
             FileUtils.copyFile(dex, new File(sourceDirPath + "/classes" + startPos + ".dex"));
+        }
+    }
+
+    public void copyAssets() throws IOException {
+        File assets = new File(targetDirPath + "/assets");
+        if (!assets.isDirectory()) {
+            return;
+        }
+        File[] files = assets.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (file.getName().contains("dexopt")) {
+                continue;
+            }
+            if (file.isDirectory()) {
+                FileUtils.copyDirectory(file, new File(sourceDirPath + "/assets/" + file.getName()));
+            } else {
+                FileUtils.copyFile(file, new File(sourceDirPath + "/assets/" + file.getName()));
+            }
+        }
+    }
+
+    public void copyLibs() throws IOException {
+        File libs = new File(targetDirPath + "/lib");
+        if (!libs.isDirectory()) {
+            return;
+        }
+        File[] files = libs.listFiles();
+        if (files == null) {
+            return;
+        }
+        if (!new File(sourceDirPath + "/lib").isDirectory()) {
+            if (!new File(sourceDirPath + "/lib").mkdirs()) {
+                throw new RuntimeException("mkdirs " + sourceDirPath + "/lib fail");
+            }
+        }
+        for (File file : files) {
+            copyFiles(file, new File(sourceDirPath + "/lib/" + file.getName()));
+        }
+    }
+
+    public void copyFiles(File source, File target) throws IOException {
+        if (source.isDirectory()) {
+            target.mkdirs();
+            File[] files = source.listFiles();
+            if (files == null) {
+                return;
+            }
+            for (File file : files) {
+                copyFiles(file, new File(target.getAbsolutePath() + "/" + file.getName()));
+            }
+        } else {
+            FileUtils.copyFile(source, target);
         }
     }
 
